@@ -64,6 +64,9 @@ func main() {
 	groupRepo := repository.NewGroupRepository(mongoDB.Database)
 	messageRepo := repository.NewMessageRepository(mongoDB.Database)
 	notifRepo := repository.NewNotificationRepository(mongoDB.Database)
+	commentRepo := repository.NewCommentRepository(mongoDB.Database)
+	albumRepo := repository.NewAlbumRepository(mongoDB.Database)
+	settingsRepo := repository.NewSettingsRepository(mongoDB.Database)
 
 	// 初始化服务
 	userService := service.NewUserService(userRepo)
@@ -73,6 +76,10 @@ func main() {
 	groupService := service.NewGroupService(groupRepo)
 	messageService := service.NewMessageService(messageRepo)
 	notifService := service.NewNotificationService(notifRepo)
+	commentService := service.NewCommentService(commentRepo)
+	albumService := service.NewAlbumService(albumRepo)
+	settingsService := service.NewSettingsService(settingsRepo)
+	_ = service.NewSearchService(userRepo, blogRepo, groupRepo)
 
 	// 初始化处理器
 	userHandler := handler.NewUserHandler(userService)
@@ -82,6 +89,9 @@ func main() {
 	groupHandler := handler.NewGroupHandler(groupService)
 	messageHandler := handler.NewMessageHandler(messageService)
 	notifHandler := handler.NewNotificationHandler(notifService)
+	commentHandler := handler.NewCommentHandler(commentService)
+	albumHandler := handler.NewAlbumHandler(albumService)
+	settingsHandler := handler.NewSettingsHandler(settingsService)
 
 	// 创建 Gin 引擎
 	r := gin.New()
@@ -171,7 +181,31 @@ func main() {
 			authorized.PUT("/notifications/:id/read", notifHandler.MarkAsRead)
 			authorized.PUT("/notifications/read-all", notifHandler.MarkAllAsRead)
 			authorized.DELETE("/notifications/:id", notifHandler.Delete)
+
+			// 评论
+			authorized.POST("/comments", commentHandler.Create)
+			authorized.DELETE("/comments/:id", commentHandler.Delete)
+
+			// 相册
+			authorized.POST("/albums", albumHandler.Create)
+			authorized.DELETE("/albums/:id", albumHandler.Delete)
+			authorized.POST("/albums/:id/photos", albumHandler.AddPhoto)
+
+			// 设置
+			authorized.GET("/settings", settingsHandler.Get)
+			authorized.PUT("/settings/privacy", settingsHandler.UpdatePrivacy)
+			authorized.PUT("/settings/notification", settingsHandler.UpdateNotification)
+			authorized.POST("/settings/blacklist", settingsHandler.AddToBlacklist)
+			authorized.DELETE("/settings/blacklist/:user_id", settingsHandler.RemoveFromBlacklist)
 		}
+
+		// 公开评论查询
+		api.GET("/comments", commentHandler.List)
+
+		// 公开相册查询
+		api.GET("/users/:user_id/albums", albumHandler.ListByUser)
+		api.GET("/albums/:id", albumHandler.Get)
+		api.GET("/albums/:id/photos", albumHandler.GetPhotos)
 	}
 
 	// 启动服务器
