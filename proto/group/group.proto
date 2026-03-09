@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package uchome.group;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/group;group";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 成员角色
+enum MemberRole {
+  MEMBER = 0;
+  ADMIN = 1;
+  OWNER = 2;
+}
+
+// 群组统计
+message GroupStats {
+  int32 members_count = 1;
+  int32 posts_count = 2;
+  int32 topics_count = 3;
+}
+
+// 群组
+message Group {
+  string group_id = 1;
+  string name = 2;
+  string description = 3;
+  string avatar = 4;
+  string category = 5;
+  string owner_id = 6; // 群主ID
+  GroupType type = 7;
+  JoinMode join_mode = 8;
+  int32 member_limit = 9;
+  google.protobuf.Timestamp created_at = 10;
+
+  // 群主信息
+  uchome.user.User owner = 11;
+
+  // 统计
+  GroupStats stats = 12;
+
+  // 当前用户状态
+  MemberRole current_user_role = 13;
+
+  enum GroupType {
+    PUBLIC = 0;
+    PRIVATE = 1;
+  }
+
+  enum JoinMode {
+    FREE = 0; // 自由加入
+    APPROVAL = 1; // 需要审批
+    INVITE = 2; // 仅邀请
+  }
+}
+
+// 群组成员
+message GroupMember {
+  string member_id = 1;
+  string group_id = 2;
+  string user_id = 3;
+  MemberRole role = 4;
+  google.protobuf.Timestamp joined_at = 5;
+
+  // 用户信息
+  uchome.user.User user = 6;
+}
+
+// 创建群组请求
+message CreateGroupRequest {
+  string name = 1;
+  string description = 2;
+  string avatar = 3;
+  string category = 4;
+  Group.GroupType type = 5;
+  Group.JoinMode join_mode = 6;
+  int32 member_limit = 7;
+}
+
+// 加入群组请求
+message JoinGroupRequest {
+  string group_id = 1;
+  string message = 2; // 申请信息
+}
+
+// 获取群组列表请求
+message GetGroupsRequest {
+  string category = 1;
+  string keyword = 2;
+  GroupFilter filter = 3;
+  uchome.common.Pagination pagination = 4;
+
+  enum GroupFilter {
+    ALL = 0;
+    MY_GROUPS = 1; // 我加入的
+    MY_CREATED = 2; // 我创建的
+  }
+}
+
+// 获取群组列表响应
+message GetGroupsResponse {
+  repeated Group groups = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+// 获取群组成员请求
+message GetGroupMembersRequest {
+  string group_id = 1;
+  uchome.common.Pagination pagination = 2;
+}
+
+// 获取群组成员响应
+message GetGroupMembersResponse {
+  repeated GroupMember members = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message GetGroupRequest {
+  string group_id = 1;
+}
+
+message LeaveGroupRequest {
+  string group_id = 1;
+}
+
+// 群组服务
+service GroupService {
+  // 创建群组
+  rpc CreateGroup(CreateGroupRequest) returns (Group) {
+    option (google.api.http) = {
+      post: "/v1/groups"
+      body: "*"
+    };
+  }
+
+  // 获取群组详情
+  rpc GetGroup(GetGroupRequest) returns (Group) {
+    option (google.api.http) = {
+      get: "/v1/groups/{group_id}"
+    };
+  }
+
+  // 获取群组列表
+  rpc GetGroups(GetGroupsRequest) returns (GetGroupsResponse) {
+    option (google.api.http) = {
+      get: "/v1/groups"
+    };
+  }
+
+  // 加入群组
+  rpc JoinGroup(JoinGroupRequest) returns (GroupMember) {
+    option (google.api.http) = {
+      post: "/v1/groups/{group_id}/members"
+      body: "*"
+    };
+  }
+
+  // 退出群组
+  rpc LeaveGroup(LeaveGroupRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/groups/{group_id}/members/me"
+    };
+  }
+
+  // 获取群组成员
+  rpc GetGroupMembers(GetGroupMembersRequest) returns (GetGroupMembersResponse) {
+    option (google.api.http) = {
+      get: "/v1/groups/{group_id}/members"
+    };
+  }
+}

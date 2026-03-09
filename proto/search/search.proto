@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package uchome.search;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/search;search";
+
+import "google/api/annotations.proto";
+import "common/types.proto";
+import "user/user.proto";
+import "content/blog.proto";
+import "content/album.proto";
+import "content/share.proto";
+import "group/group.proto";
+
+// 标签
+message Tag {
+  string name = 1;
+  int32 count = 2; // 使用次数
+}
+
+// 热门标签
+message GetHotTagsRequest {
+  int32 limit = 1;
+}
+
+message GetHotTagsResponse {
+  repeated Tag tags = 1;
+}
+
+// 全局搜索
+message GlobalSearchRequest {
+  string keyword = 1;
+  uchome.common.Pagination pagination = 2;
+}
+
+message GlobalSearchResponse {
+  repeated uchome.user.User users = 1;
+  repeated uchome.content.Blog blogs = 2;
+  repeated uchome.content.Album albums = 3;
+  repeated uchome.content.Share shares = 4;
+  repeated uchome.group.Group groups = 5;
+}
+
+// 搜索服务
+service SearchService {
+  rpc GetHotTags(GetHotTagsRequest) returns (GetHotTagsResponse) {
+    option (google.api.http) = {
+      get: "/v1/tags/hot"
+    };
+  }
+
+  rpc GlobalSearch(GlobalSearchRequest) returns (GlobalSearchResponse) {
+    option (google.api.http) = {
+      get: "/v1/search"
+    };
+  }
+}

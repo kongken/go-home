@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package uchome.common;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/common;common";
+
+// 统一错误响应
+message Error {
+  int32 code = 1; // 错误码
+  string message = 2; // 错误消息
+  string detail = 3; // 详细描述
+  map<string, string> metadata = 4; // 额外元数据
+}
+
+// 错误码定义
+enum ErrorCode {
+  // 通用错误 (1xxx)
+  SUCCESS = 0;
+  UNKNOWN_ERROR = 1000;
+  INVALID_PARAM = 1001;
+  UNAUTHORIZED = 1002;
+  FORBIDDEN = 1003;
+  NOT_FOUND = 1004;
+  ALREADY_EXISTS = 1005;
+
+  // 用户相关 (2xxx)
+  USER_NOT_FOUND = 2001;
+  USER_ALREADY_EXISTS = 2002;
+  INVALID_PASSWORD = 2003;
+  TOKEN_EXPIRED = 2004;
+  TOKEN_INVALID = 2005;
+
+  // 好友相关 (3xxx)
+  FRIEND_REQUEST_EXISTS = 3001;
+  ALREADY_FRIENDS = 3002;
+  NOT_FRIENDS = 3003;
+  FRIEND_LIMIT_EXCEEDED = 3004;
+
+  // 内容相关 (4xxx)
+  CONTENT_NOT_FOUND = 4001;
+  PERMISSION_DENIED = 4002;
+  CONTENT_DELETED = 4003;
+
+  // 群组相关 (5xxx)
+  GROUP_NOT_FOUND = 5001;
+  NOT_GROUP_MEMBER = 5002;
+  GROUP_FULL = 5003;
+}

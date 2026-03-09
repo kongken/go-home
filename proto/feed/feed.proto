@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+package uchome.feed;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/feed;feed";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 动态项
+message FeedItem {
+  string feed_id = 1;
+  string user_id = 2;
+  FeedType type = 3;
+  string content = 4; // 动态内容/描述
+  string target_id = 5; // 关联对象ID
+  string target_type = 6; // 关联对象类型
+  repeated uchome.common.MediaAttachment attachments = 7;
+  uchome.common.Location location = 8;
+  uchome.common.PrivacyLevel privacy = 9;
+  google.protobuf.Timestamp created_at = 10;
+
+  // 用户信息
+  uchome.user.User user = 11;
+
+  // 统计信息
+  FeedStats stats = 12;
+
+  // 当前用户交互状态
+  InteractionStatus interaction = 13;
+
+  enum FeedType {
+    STATUS = 0; // 状态更新
+    BLOG = 1; // 发表日志
+    ALBUM = 2; // 上传相册
+    SHARE = 3; // 分享内容
+    CHECKIN = 4; // 签到
+    FRIENDSHIP = 5; // 添加好友
+    JOIN_GROUP = 6; // 加入群组
+    ACTIVITY = 7; // 参加活动
+  }
+}
+
+// 动态统计
+message FeedStats {
+  int32 likes_count = 1;
+  int32 comments_count = 2;
+  int32 shares_count = 3;
+  int32 views_count = 4;
+}
+
+// 交互状态
+message InteractionStatus {
+  bool is_liked = 1;
+  bool is_favorited = 2;
+}
+
+// 创建动态请求
+message CreateFeedRequest {
+  FeedItem.FeedType type = 1;
+  string content = 2;
+  string target_id = 3;
+  string target_type = 4;
+  repeated uchome.common.MediaAttachment attachments = 5;
+  uchome.common.Location location = 6;
+  uchome.common.PrivacyLevel privacy = 7;
+}
+
+// 获取动态流请求
+message GetFeedStreamRequest {
+  FeedStreamType stream_type = 1;
+  string user_id = 2; // 获取指定用户动态
+  uchome.common.Pagination pagination = 3;
+
+  enum FeedStreamType {
+    HOME = 0; // 首页动态（好友+自己）
+    USER = 1; // 用户动态
+    HOT = 2; // 热门动态
+  }
+}
+
+// 获取动态流响应
+message GetFeedStreamResponse {
+  repeated FeedItem feeds = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+// 获取单条动态请求
+message GetFeedRequest {
+  string feed_id = 1;
+}
+
+// 删除动态请求
+message DeleteFeedRequest {
+  string feed_id = 1;
+}
+
+// 点赞动态请求
+message LikeFeedRequest {
+  string feed_id = 1;
+}
+
+// 取消点赞请求
+message UnlikeFeedRequest {
+  string feed_id = 1;
+}
+
+// 动态服务
+service FeedService {
+  // 创建动态
+  rpc CreateFeed(CreateFeedRequest) returns (FeedItem) {
+    option (google.api.http) = {
+      post: "/v1/feeds"
+      body: "*"
+    };
+  }
+
+  // 获取动态流
+  rpc GetFeedStream(GetFeedStreamRequest) returns (GetFeedStreamResponse) {
+    option (google.api.http) = {
+      get: "/v1/feeds/stream"
+    };
+  }
+
+  // 获取单条动态详情
+  rpc GetFeed(GetFeedRequest) returns (FeedItem) {
+    option (google.api.http) = {
+      get: "/v1/feeds/{feed_id}"
+    };
+  }
+
+  // 删除动态
+  rpc DeleteFeed(DeleteFeedRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/feeds/{feed_id}"
+    };
+  }
+
+  // 点赞动态
+  rpc LikeFeed(LikeFeedRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/feeds/{feed_id}/like"
+    };
+  }
+
+  // 取消点赞
+  rpc UnlikeFeed(UnlikeFeedRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/feeds/{feed_id}/like"
+    };
+  }
+}

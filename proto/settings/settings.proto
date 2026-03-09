@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package uchome.settings;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/settings;settings";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 隐私设置
+message PrivacySettings {
+  uchome.common.PrivacyLevel default_blog_privacy = 1;
+  uchome.common.PrivacyLevel default_album_privacy = 2;
+  uchome.common.PrivacyLevel default_share_privacy = 3;
+  uchome.common.PrivacyLevel default_feed_privacy = 4;
+}
+
+// 通知设置
+message NotificationSettings {
+  bool notify_friend_request = 1;
+  bool notify_comment = 2;
+  bool notify_like = 3;
+  bool notify_mention = 4;
+  bool notify_group = 5;
+  bool notify_system = 6;
+}
+
+// 黑名单
+message BlacklistEntry {
+  string user_id = 1;
+  uchome.user.User user = 2;
+}
+
+// 获取设置响应
+message GetSettingsResponse {
+  PrivacySettings privacy = 1;
+  NotificationSettings notification = 2;
+  repeated BlacklistEntry blacklist = 3;
+}
+
+// 更新隐私设置
+message UpdatePrivacySettingsRequest {
+  PrivacySettings privacy = 1;
+}
+
+// 更新通知设置
+message UpdateNotificationSettingsRequest {
+  NotificationSettings notification = 1;
+}
+
+// 黑名单操作
+message AddToBlacklistRequest {
+  string user_id = 1;
+}
+
+message RemoveFromBlacklistRequest {
+  string user_id = 1;
+}
+
+message GetBlacklistResponse {
+  repeated BlacklistEntry blacklist = 1;
+}
+
+// 设置服务
+service SettingsService {
+  rpc GetSettings(google.protobuf.Empty) returns (GetSettingsResponse) {
+    option (google.api.http) = {
+      get: "/v1/settings"
+    };
+  }
+
+  rpc UpdatePrivacySettings(UpdatePrivacySettingsRequest) returns (PrivacySettings) {
+    option (google.api.http) = {
+      put: "/v1/settings/privacy"
+      body: "*"
+    };
+  }
+
+  rpc UpdateNotificationSettings(UpdateNotificationSettingsRequest) returns (NotificationSettings) {
+    option (google.api.http) = {
+      put: "/v1/settings/notification"
+      body: "*"
+    };
+  }
+
+  rpc GetBlacklist(google.protobuf.Empty) returns (GetBlacklistResponse) {
+    option (google.api.http) = {
+      get: "/v1/settings/blacklist"
+    };
+  }
+
+  rpc AddToBlacklist(AddToBlacklistRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/settings/blacklist"
+      body: "*"
+    };
+  }
+
+  rpc RemoveFromBlacklist(RemoveFromBlacklistRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/settings/blacklist/{user_id}"
+    };
+  }
+}

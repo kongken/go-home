@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package uchome.content;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/content;content";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 照片
+message Photo {
+  string photo_id = 1;
+  string album_id = 2;
+  string user_id = 3;
+  string url = 4;
+  string thumbnail = 5;
+  string description = 6;
+  int32 width = 7;
+  int32 height = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// 相册
+message Album {
+  string album_id = 1;
+  string user_id = 2;
+  string name = 3;
+  string description = 4;
+  string cover_photo = 5;
+  uchome.common.PrivacyLevel privacy = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+
+  uchome.user.User owner = 9;
+  AlbumStats stats = 10;
+}
+
+// 相册统计
+message AlbumStats {
+  int32 photos_count = 1;
+  int32 views_count = 2;
+  int32 comments_count = 3;
+}
+
+// 创建相册
+message CreateAlbumRequest {
+  string name = 1;
+  string description = 2;
+  string cover_photo = 3;
+  uchome.common.PrivacyLevel privacy = 4;
+}
+
+// 更新相册
+message UpdateAlbumRequest {
+  string album_id = 1;
+  string name = 2;
+  string description = 3;
+  string cover_photo = 4;
+  uchome.common.PrivacyLevel privacy = 5;
+}
+
+// 获取相册列表
+message GetAlbumsRequest {
+  string user_id = 1;
+  uchome.common.Pagination pagination = 2;
+}
+
+message GetAlbumsResponse {
+  repeated Album albums = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message GetAlbumRequest {
+  string album_id = 1;
+}
+
+message DeleteAlbumRequest {
+  string album_id = 1;
+}
+
+// 上传照片
+message UploadPhotoRequest {
+  string album_id = 1;
+  string url = 2;
+  string thumbnail = 3;
+  string description = 4;
+  int32 width = 5;
+  int32 height = 6;
+}
+
+// 获取照片列表
+message GetPhotosRequest {
+  string album_id = 1;
+  uchome.common.Pagination pagination = 2;
+}
+
+message GetPhotosResponse {
+  repeated Photo photos = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message DeletePhotoRequest {
+  string photo_id = 1;
+}
+
+// 相册服务
+service AlbumService {
+  rpc CreateAlbum(CreateAlbumRequest) returns (Album) {
+    option (google.api.http) = {
+      post: "/v1/albums"
+      body: "*"
+    };
+  }
+
+  rpc GetAlbum(GetAlbumRequest) returns (Album) {
+    option (google.api.http) = {
+      get: "/v1/albums/{album_id}"
+    };
+  }
+
+  rpc UpdateAlbum(UpdateAlbumRequest) returns (Album) {
+    option (google.api.http) = {
+      put: "/v1/albums/{album_id}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteAlbum(DeleteAlbumRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/albums/{album_id}"
+    };
+  }
+
+  rpc GetAlbums(GetAlbumsRequest) returns (GetAlbumsResponse) {
+    option (google.api.http) = {
+      get: "/v1/albums"
+    };
+  }
+
+  rpc UploadPhoto(UploadPhotoRequest) returns (Photo) {
+    option (google.api.http) = {
+      post: "/v1/photos"
+      body: "*"
+    };
+  }
+
+  rpc GetPhotos(GetPhotosRequest) returns (GetPhotosResponse) {
+    option (google.api.http) = {
+      get: "/v1/photos"
+    };
+  }
+
+  rpc DeletePhoto(DeletePhotoRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/photos/{photo_id}"
+    };
+  }
+}

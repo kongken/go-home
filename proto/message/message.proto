@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package uchome.message;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/message;message";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 私信
+message Message {
+  string message_id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;
+  string content = 4;
+  repeated uchome.common.MediaAttachment attachments = 5;
+  bool is_read = 6;
+  google.protobuf.Timestamp created_at = 7;
+
+  // 发送者信息
+  uchome.user.User from_user = 8;
+}
+
+// 会话
+message Conversation {
+  string conversation_id = 1;
+  string user_id = 2; // 对方用户ID
+  Message last_message = 3;
+  int32 unread_count = 4;
+  google.protobuf.Timestamp updated_at = 5;
+
+  // 对方用户信息
+  uchome.user.User user = 6;
+}
+
+// 发送消息请求
+message SendMessageRequest {
+  string to_user_id = 1;
+  string content = 2;
+  repeated uchome.common.MediaAttachment attachments = 3;
+}
+
+message GetConversationsRequest {
+  uchome.common.Pagination pagination = 1;
+}
+
+// 获取会话列表响应
+message GetConversationsResponse {
+  repeated Conversation conversations = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+// 获取消息历史请求
+message GetMessagesRequest {
+  string user_id = 1; // 对方用户ID
+  uchome.common.Pagination pagination = 2;
+}
+
+// 获取消息历史响应
+message GetMessagesResponse {
+  repeated Message messages = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message MarkAsReadRequest {
+  string user_id = 1; // 对方用户ID，标记该会话所有消息已读
+}
+
+// 消息服务
+service MessageService {
+  // 发送消息
+  rpc SendMessage(SendMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      post: "/v1/messages"
+      body: "*"
+    };
+  }
+
+  // 获取会话列表
+  rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse) {
+    option (google.api.http) = {
+      get: "/v1/messages/conversations"
+    };
+  }
+
+  // 获取消息历史
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse) {
+    option (google.api.http) = {
+      get: "/v1/messages/history"
+    };
+  }
+
+  // 标记消息已读
+  rpc MarkAsRead(MarkAsReadRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/messages/read"
+      body: "*"
+    };
+  }
+}

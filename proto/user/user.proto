@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package uchome.user;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/user;user";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+
+// 用户基本信息
+message User {
+  string user_id = 1;
+  string username = 2;
+  string nickname = 3;
+  string avatar = 4;
+  string bio = 5; // 个人简介
+  Gender gender = 6;
+  google.protobuf.Timestamp birthday = 7;
+  string email = 8;
+  string phone = 9;
+  uchome.common.Location location = 10;
+  UserStatus status = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+
+  // 统计信息
+  UserStats stats = 14;
+
+  enum Gender {
+    UNKNOWN = 0;
+    MALE = 1;
+    FEMALE = 2;
+    OTHER = 3;
+  }
+
+  enum UserStatus {
+    NORMAL = 0;
+    FROZEN = 1; // 冻结
+    BANNED = 2; // 封禁
+  }
+}
+
+// 用户统计
+message UserStats {
+  int32 friends_count = 1;
+  int32 followers_count = 2;
+  int32 following_count = 3;
+  int32 blogs_count = 4;
+  int32 albums_count = 5;
+  int32 shares_count = 6;
+}
+
+// 注册请求
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+  string phone = 4;
+  string verification_code = 5; // 验证码
+}
+
+// 登录请求
+message LoginRequest {
+  string account = 1; // 用户名/邮箱/手机号
+  string password = 2;
+  string device_id = 3; // 设备标识
+}
+
+// 认证响应
+message AuthResponse {
+  string access_token = 1; // JWT访问令牌
+  string refresh_token = 2; // 刷新令牌
+  int64 expires_in = 3; // 过期时间（秒）
+  User user = 4; // 用户信息
+}
+
+// 刷新Token请求
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+// 修改密码请求
+message ChangePasswordRequest {
+  string old_password = 1;
+  string new_password = 2;
+}
+
+// 获取用户信息请求
+message GetUserRequest {
+  string user_id = 1;
+}
+
+// 更新用户信息请求
+message UpdateUserRequest {
+  string nickname = 1;
+  string avatar = 2;
+  string bio = 3;
+  User.Gender gender = 4;
+  google.protobuf.Timestamp birthday = 5;
+  uchome.common.Location location = 6;
+}
+
+// 搜索用户请求
+message SearchUsersRequest {
+  string keyword = 1; // 关键词
+  uchome.common.Pagination pagination = 2;
+}
+
+// 搜索用户响应
+message SearchUsersResponse {
+  repeated User users = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+// 用户服务
+service UserService {
+  // 用户注册
+  rpc Register(RegisterRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/register"
+      body: "*"
+    };
+  }
+
+  // 用户登录
+  rpc Login(LoginRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/login"
+      body: "*"
+    };
+  }
+
+  // 刷新Token
+  rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/refresh"
+      body: "*"
+    };
+  }
+
+  // 登出
+  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/auth/logout"
+    };
+  }
+
+  // 修改密码
+  rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/users/password"
+      body: "*"
+    };
+  }
+
+  // 获取当前用户信息
+  rpc GetMe(google.protobuf.Empty) returns (User) {
+    option (google.api.http) = {
+      get: "/v1/users/me"
+    };
+  }
+
+  // 获取指定用户信息
+  rpc GetUser(GetUserRequest) returns (User) {
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}"
+    };
+  }
+
+  // 更新用户信息
+  rpc UpdateUser(UpdateUserRequest) returns (User) {
+    option (google.api.http) = {
+      put: "/v1/users/me"
+      body: "*"
+    };
+  }
+
+  // 搜索用户
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse) {
+    option (google.api.http) = {
+      get: "/v1/users/search"
+    };
+  }
+}

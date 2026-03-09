@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package uchome.content;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/content;content";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 分享类型
+enum ShareType {
+  SHARE_LINK = 0;
+  SHARE_IMAGE = 1;
+  SHARE_VIDEO = 2;
+  SHARE_MUSIC = 3;
+}
+
+// 分享
+message Share {
+  string share_id = 1;
+  string user_id = 2;
+  ShareType type = 3;
+  string title = 4;
+  string url = 5;
+  string description = 6;
+  string thumbnail = 7;
+  uchome.common.PrivacyLevel privacy = 8;
+  google.protobuf.Timestamp created_at = 9;
+
+  uchome.user.User user = 10;
+  ShareStats stats = 11;
+}
+
+// 分享统计
+message ShareStats {
+  int32 views_count = 1;
+  int32 comments_count = 2;
+  int32 favorites_count = 3;
+}
+
+// 创建分享
+message CreateShareRequest {
+  ShareType type = 1;
+  string title = 2;
+  string url = 3;
+  string description = 4;
+  string thumbnail = 5;
+  uchome.common.PrivacyLevel privacy = 6;
+}
+
+// 获取分享列表
+message GetSharesRequest {
+  string user_id = 1;
+  uchome.common.Pagination pagination = 2;
+}
+
+message GetSharesResponse {
+  repeated Share shares = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message GetShareRequest {
+  string share_id = 1;
+}
+
+message DeleteShareRequest {
+  string share_id = 1;
+}
+
+// 分享服务
+service ShareService {
+  rpc CreateShare(CreateShareRequest) returns (Share) {
+    option (google.api.http) = {
+      post: "/v1/shares"
+      body: "*"
+    };
+  }
+
+  rpc GetShare(GetShareRequest) returns (Share) {
+    option (google.api.http) = {
+      get: "/v1/shares/{share_id}"
+    };
+  }
+
+  rpc DeleteShare(DeleteShareRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/shares/{share_id}"
+    };
+  }
+
+  rpc GetShares(GetSharesRequest) returns (GetSharesResponse) {
+    option (google.api.http) = {
+      get: "/v1/shares"
+    };
+  }
+}

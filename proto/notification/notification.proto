@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package uchome.notification;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/notification;notification";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 通知
+message Notification {
+  string notification_id = 1;
+  string user_id = 2; // 接收者
+  NotificationType type = 3;
+  string title = 4;
+  string content = 5;
+  string actor_id = 6; // 触发者ID
+  string target_id = 7; // 关联对象ID
+  string target_type = 8; // 关联对象类型
+  bool is_read = 9;
+  google.protobuf.Timestamp created_at = 10;
+
+  // 触发者信息
+  uchome.user.User actor = 11;
+
+  enum NotificationType {
+    SYSTEM = 0;
+    FRIEND_REQUEST = 1;
+    FRIEND_ACCEPTED = 2;
+    LIKE = 3;
+    COMMENT = 4;
+    MENTION = 5;
+    GROUP_INVITE = 6;
+    GROUP_APPROVED = 7;
+  }
+}
+
+// 获取通知列表请求
+message GetNotificationsRequest {
+  NotificationFilter filter = 1;
+  uchome.common.Pagination pagination = 2;
+
+  enum NotificationFilter {
+    ALL = 0;
+    UNREAD = 1;
+    READ = 2;
+  }
+}
+
+// 获取通知列表响应
+message GetNotificationsResponse {
+  repeated Notification notifications = 1;
+  uchome.common.PaginationResponse pagination = 2;
+  int32 unread_count = 3;
+}
+
+message MarkNotificationAsReadRequest {
+  string notification_id = 1;
+}
+
+message UnreadCountResponse {
+  int32 count = 1;
+}
+
+// 通知服务
+service NotificationService {
+  // 获取通知列表
+  rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse) {
+    option (google.api.http) = {
+      get: "/v1/notifications"
+    };
+  }
+
+  // 标记单条通知已读
+  rpc MarkNotificationAsRead(MarkNotificationAsReadRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/notifications/{notification_id}/read"
+    };
+  }
+
+  // 标记所有通知已读
+  rpc MarkAllAsRead(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/notifications/read-all"
+    };
+  }
+
+  // 获取未读通知数量
+  rpc GetUnreadCount(google.protobuf.Empty) returns (UnreadCountResponse) {
+    option (google.api.http) = {
+      get: "/v1/notifications/unread-count"
+    };
+  }
+}

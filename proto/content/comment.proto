@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package uchome.content;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/content;content";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 评论
+message Comment {
+  string comment_id = 1;
+  string user_id = 2;
+  string target_id = 3; // 评论目标ID
+  string target_type = 4; // 目标类型（blog/album/feed等）
+  string content = 5;
+  string parent_id = 6; // 父评论ID（回复）
+  repeated uchome.common.MediaAttachment attachments = 7;
+  google.protobuf.Timestamp created_at = 8;
+
+  // 评论者信息
+  uchome.user.User user = 9;
+
+  // 子评论（仅一级）
+  repeated Comment replies = 10;
+
+  // 统计
+  int32 likes_count = 11;
+  int32 replies_count = 12;
+}
+
+// 创建评论请求
+message CreateCommentRequest {
+  string target_id = 1;
+  string target_type = 2;
+  string content = 3;
+  string parent_id = 4;
+  repeated uchome.common.MediaAttachment attachments = 5;
+}
+
+// 获取评论列表请求
+message GetCommentsRequest {
+  string target_id = 1;
+  string target_type = 2;
+  uchome.common.Pagination pagination = 3;
+}
+
+// 获取评论列表响应
+message GetCommentsResponse {
+  repeated Comment comments = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message DeleteCommentRequest {
+  string comment_id = 1;
+}
+
+// 评论服务
+service CommentService {
+  // 创建评论
+  rpc CreateComment(CreateCommentRequest) returns (Comment) {
+    option (google.api.http) = {
+      post: "/v1/comments"
+      body: "*"
+    };
+  }
+
+  // 获取评论列表
+  rpc GetComments(GetCommentsRequest) returns (GetCommentsResponse) {
+    option (google.api.http) = {
+      get: "/v1/comments"
+    };
+  }
+
+  // 删除评论
+  rpc DeleteComment(DeleteCommentRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/comments/{comment_id}"
+    };
+  }
+}

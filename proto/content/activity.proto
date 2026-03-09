@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package uchome.content;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/content;content";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 活动
+message Activity {
+  string activity_id = 1;
+  string user_id = 2; // 发起人
+  string title = 3;
+  string description = 4;
+  uchome.common.Location location = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+  int32 max_participants = 8;
+  ActivityStatus status = 9;
+  google.protobuf.Timestamp created_at = 10;
+
+  uchome.user.User organizer = 11;
+  ActivityStats stats = 12;
+
+  enum ActivityStatus {
+    UPCOMING = 0;
+    ONGOING = 1;
+    FINISHED = 2;
+    CANCELED = 3;
+  }
+}
+
+// 活动统计
+message ActivityStats {
+  int32 participants_count = 1;
+  int32 views_count = 2;
+}
+
+// 报名信息
+message ActivityParticipant {
+  string participant_id = 1;
+  string activity_id = 2;
+  string user_id = 3;
+  google.protobuf.Timestamp joined_at = 4;
+  uchome.user.User user = 5;
+}
+
+// 创建活动
+message CreateActivityRequest {
+  string title = 1;
+  string description = 2;
+  uchome.common.Location location = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+  int32 max_participants = 6;
+}
+
+// 更新活动
+message UpdateActivityRequest {
+  string activity_id = 1;
+  string title = 2;
+  string description = 3;
+  uchome.common.Location location = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
+  int32 max_participants = 7;
+  Activity.ActivityStatus status = 8;
+}
+
+// 获取活动列表
+message GetActivitiesRequest {
+  uchome.common.Pagination pagination = 1;
+}
+
+message GetActivitiesResponse {
+  repeated Activity activities = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message GetActivityRequest {
+  string activity_id = 1;
+}
+
+message DeleteActivityRequest {
+  string activity_id = 1;
+}
+
+// 报名/取消报名
+message JoinActivityRequest {
+  string activity_id = 1;
+}
+
+message LeaveActivityRequest {
+  string activity_id = 1;
+}
+
+// 获取参与者列表
+message GetParticipantsRequest {
+  string activity_id = 1;
+  uchome.common.Pagination pagination = 2;
+}
+
+message GetParticipantsResponse {
+  repeated ActivityParticipant participants = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+// 活动服务
+service ActivityService {
+  rpc CreateActivity(CreateActivityRequest) returns (Activity) {
+    option (google.api.http) = {
+      post: "/v1/activities"
+      body: "*"
+    };
+  }
+
+  rpc GetActivity(GetActivityRequest) returns (Activity) {
+    option (google.api.http) = {
+      get: "/v1/activities/{activity_id}"
+    };
+  }
+
+  rpc UpdateActivity(UpdateActivityRequest) returns (Activity) {
+    option (google.api.http) = {
+      put: "/v1/activities/{activity_id}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteActivity(DeleteActivityRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/activities/{activity_id}"
+    };
+  }
+
+  rpc GetActivities(GetActivitiesRequest) returns (GetActivitiesResponse) {
+    option (google.api.http) = {
+      get: "/v1/activities"
+    };
+  }
+
+  rpc JoinActivity(JoinActivityRequest) returns (ActivityParticipant) {
+    option (google.api.http) = {
+      post: "/v1/activities/{activity_id}/participants"
+      body: "*"
+    };
+  }
+
+  rpc LeaveActivity(LeaveActivityRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/activities/{activity_id}/participants/me"
+    };
+  }
+
+  rpc GetParticipants(GetParticipantsRequest) returns (GetParticipantsResponse) {
+    option (google.api.http) = {
+      get: "/v1/activities/{activity_id}/participants"
+    };
+  }
+}

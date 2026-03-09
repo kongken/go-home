@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package uchome.content;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/content;content";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 投票选项
+message PollOption {
+  string option_id = 1;
+  string text = 2;
+  string image = 3;
+  int32 votes_count = 4;
+}
+
+// 投票
+message Poll {
+  string poll_id = 1;
+  string user_id = 2;
+  string title = 3;
+  string description = 4;
+  repeated PollOption options = 5;
+  bool multiple = 6; // 是否多选
+  bool anonymous = 7; // 是否匿名
+  google.protobuf.Timestamp expire_at = 8;
+  uchome.common.PrivacyLevel privacy = 9;
+  PollStatus status = 10;
+  google.protobuf.Timestamp created_at = 11;
+
+  uchome.user.User creator = 12;
+
+  enum PollStatus {
+    OPEN = 0;
+    CLOSED = 1;
+    EXPIRED = 2;
+  }
+}
+
+// 创建投票
+message CreatePollRequest {
+  string title = 1;
+  string description = 2;
+  repeated PollOption options = 3;
+  bool multiple = 4;
+  bool anonymous = 5;
+  google.protobuf.Timestamp expire_at = 6;
+  uchome.common.PrivacyLevel privacy = 7;
+}
+
+// 更新投票（仅未开始或无人投票时）
+message UpdatePollRequest {
+  string poll_id = 1;
+  string title = 2;
+  string description = 3;
+  repeated PollOption options = 4;
+  bool multiple = 5;
+  bool anonymous = 6;
+  google.protobuf.Timestamp expire_at = 7;
+  uchome.common.PrivacyLevel privacy = 8;
+  Poll.PollStatus status = 9;
+}
+
+// 投票请求
+message VoteRequest {
+  string poll_id = 1;
+  repeated string option_ids = 2;
+}
+
+// 获取投票列表
+message GetPollsRequest {
+  string user_id = 1;
+  uchome.common.Pagination pagination = 2;
+}
+
+message GetPollsResponse {
+  repeated Poll polls = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message GetPollRequest {
+  string poll_id = 1;
+}
+
+message DeletePollRequest {
+  string poll_id = 1;
+}
+
+// 投票服务
+service PollService {
+  rpc CreatePoll(CreatePollRequest) returns (Poll) {
+    option (google.api.http) = {
+      post: "/v1/polls"
+      body: "*"
+    };
+  }
+
+  rpc GetPoll(GetPollRequest) returns (Poll) {
+    option (google.api.http) = {
+      get: "/v1/polls/{poll_id}"
+    };
+  }
+
+  rpc UpdatePoll(UpdatePollRequest) returns (Poll) {
+    option (google.api.http) = {
+      put: "/v1/polls/{poll_id}"
+      body: "*"
+    };
+  }
+
+  rpc DeletePoll(DeletePollRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/polls/{poll_id}"
+    };
+  }
+
+  rpc GetPolls(GetPollsRequest) returns (GetPollsResponse) {
+    option (google.api.http) = {
+      get: "/v1/polls"
+    };
+  }
+
+  rpc Vote(VoteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/polls/{poll_id}/vote"
+      body: "*"
+    };
+  }
+}

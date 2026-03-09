@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package uchome.content;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/content;content";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 日志（博客）
+message Blog {
+  string blog_id = 1;
+  string user_id = 2;
+  string title = 3;
+  string content = 4;
+  string summary = 5; // 摘要
+  string cover_image = 6; // 封面图
+  repeated string tags = 7;
+  string category = 8;
+  uchome.common.PrivacyLevel privacy = 9;
+  BlogStatus status = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+
+  // 作者信息
+  uchome.user.User author = 13;
+
+  // 统计信息
+  BlogStats stats = 14;
+
+  enum BlogStatus {
+    DRAFT = 0;
+    PUBLISHED = 1;
+    DELETED = 2;
+  }
+}
+
+// 日志统计
+message BlogStats {
+  int32 views_count = 1;
+  int32 likes_count = 2;
+  int32 comments_count = 3;
+  int32 favorites_count = 4;
+}
+
+// 创建日志请求
+message CreateBlogRequest {
+  string title = 1;
+  string content = 2;
+  string summary = 3;
+  string cover_image = 4;
+  repeated string tags = 5;
+  string category = 6;
+  uchome.common.PrivacyLevel privacy = 7;
+  Blog.BlogStatus status = 8;
+}
+
+// 更新日志请求
+message UpdateBlogRequest {
+  string blog_id = 1;
+  string title = 2;
+  string content = 3;
+  string summary = 4;
+  string cover_image = 5;
+  repeated string tags = 6;
+  string category = 7;
+  uchome.common.PrivacyLevel privacy = 8;
+  Blog.BlogStatus status = 9;
+}
+
+// 获取日志列表请求
+message GetBlogsRequest {
+  string user_id = 1; // 获取指定用户的日志
+  string category = 2;
+  repeated string tags = 3;
+  uchome.common.Pagination pagination = 4;
+}
+
+// 获取日志列表响应
+message GetBlogsResponse {
+  repeated Blog blogs = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+message GetBlogRequest {
+  string blog_id = 1;
+}
+
+message DeleteBlogRequest {
+  string blog_id = 1;
+}
+
+// 日志服务
+service BlogService {
+  // 创建日志
+  rpc CreateBlog(CreateBlogRequest) returns (Blog) {
+    option (google.api.http) = {
+      post: "/v1/blogs"
+      body: "*"
+    };
+  }
+
+  // 获取日志详情
+  rpc GetBlog(GetBlogRequest) returns (Blog) {
+    option (google.api.http) = {
+      get: "/v1/blogs/{blog_id}"
+    };
+  }
+
+  // 更新日志
+  rpc UpdateBlog(UpdateBlogRequest) returns (Blog) {
+    option (google.api.http) = {
+      put: "/v1/blogs/{blog_id}"
+      body: "*"
+    };
+  }
+
+  // 删除日志
+  rpc DeleteBlog(DeleteBlogRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/blogs/{blog_id}"
+    };
+  }
+
+  // 获取日志列表
+  rpc GetBlogs(GetBlogsRequest) returns (GetBlogsResponse) {
+    option (google.api.http) = {
+      get: "/v1/blogs"
+    };
+  }
+}

@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+package uchome.friend;
+
+option go_package = "github.com/kongken/go-home/pkg/proto/friend;friend";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/types.proto";
+import "user/user.proto";
+
+// 好友关系
+message Friendship {
+  string friendship_id = 1;
+  string user_id = 2;
+  string friend_id = 3;
+  FriendshipStatus status = 4;
+  string group_name = 5; // 好友分组
+  string remark = 6; // 备注名
+  google.protobuf.Timestamp created_at = 7;
+
+  // 好友用户信息
+  uchome.user.User friend_user = 8;
+
+  enum FriendshipStatus {
+    PENDING = 0; // 待确认
+    ACCEPTED = 1; // 已接受
+    BLOCKED = 2; // 已屏蔽
+  }
+}
+
+// 好友请求
+message FriendRequest {
+  string request_id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;
+  string message = 4; // 验证消息
+  RequestStatus status = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+
+  // 发起人信息
+  uchome.user.User from_user = 8;
+
+  enum RequestStatus {
+    PENDING = 0;
+    ACCEPTED = 1;
+    REJECTED = 2;
+    EXPIRED = 3;
+  }
+}
+
+// 发送好友请求
+message SendFriendRequestRequest {
+  string to_user_id = 1;
+  string message = 2;
+}
+
+// 处理好友请求
+message HandleFriendRequestRequest {
+  string request_id = 1;
+  bool accept = 2; // true=接受, false=拒绝
+  string group_name = 3; // 接受时的分组
+}
+
+// 获取好友列表请求
+message GetFriendsRequest {
+  string user_id = 1; // 空则获取自己的
+  string group_name = 2; // 按分组过滤
+  uchome.common.Pagination pagination = 3;
+}
+
+// 获取好友列表响应
+message GetFriendsResponse {
+  repeated Friendship friendships = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+// 获取好友请求列表请求
+message GetFriendRequestsRequest {
+  RequestType type = 1;
+  uchome.common.Pagination pagination = 2;
+
+  enum RequestType {
+    RECEIVED = 0; // 收到的
+    SENT = 1; // 发出的
+  }
+}
+
+// 获取好友请求列表响应
+message GetFriendRequestsResponse {
+  repeated FriendRequest requests = 1;
+  uchome.common.PaginationResponse pagination = 2;
+}
+
+// 删除好友请求
+message DeleteFriendRequest {
+  string friend_id = 1;
+}
+
+// 更新好友信息请求
+message UpdateFriendRequest {
+  string friend_id = 1;
+  string group_name = 2;
+  string remark = 3;
+}
+
+// 用于检查好友关系的辅助消息
+message CheckFriendshipRequest {
+  string user_id = 1;
+}
+
+// 好友服务
+service FriendService {
+  // 发送好友请求
+  rpc SendFriendRequest(SendFriendRequestRequest) returns (FriendRequest) {
+    option (google.api.http) = {
+      post: "/v1/friends/requests"
+      body: "*"
+    };
+  }
+
+  // 处理好友请求
+  rpc HandleFriendRequest(HandleFriendRequestRequest) returns (Friendship) {
+    option (google.api.http) = {
+      put: "/v1/friends/requests/{request_id}"
+      body: "*"
+    };
+  }
+
+  // 获取好友请求列表
+  rpc GetFriendRequests(GetFriendRequestsRequest) returns (GetFriendRequestsResponse) {
+    option (google.api.http) = {
+      get: "/v1/friends/requests"
+    };
+  }
+
+  // 获取好友列表
+  rpc GetFriends(GetFriendsRequest) returns (GetFriendsResponse) {
+    option (google.api.http) = {
+      get: "/v1/friends"
+    };
+  }
+
+  // 删除好友
+  rpc DeleteFriend(DeleteFriendRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/friends/{friend_id}"
+    };
+  }
+
+  // 更新好友信息（分组、备注）
+  rpc UpdateFriend(UpdateFriendRequest) returns (Friendship) {
+    option (google.api.http) = {
+      put: "/v1/friends/{friend_id}"
+      body: "*"
+    };
+  }
+
+  // 检查好友关系
+  rpc CheckFriendship(CheckFriendshipRequest) returns (Friendship) {
+    option (google.api.http) = {
+      get: "/v1/friends/{user_id}/check"
+    };
+  }
+}
