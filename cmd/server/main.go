@@ -61,18 +61,27 @@ func main() {
 	blogRepo := repository.NewBlogRepositoryMongo(mongoDB.Database)
 	feedRepo := repository.NewFeedRepository(mongoDB.Database)
 	friendRepo := repository.NewFriendRepository(mongoDB.Database)
+	groupRepo := repository.NewGroupRepository(mongoDB.Database)
+	messageRepo := repository.NewMessageRepository(mongoDB.Database)
+	notifRepo := repository.NewNotificationRepository(mongoDB.Database)
 
 	// 初始化服务
 	userService := service.NewUserService(userRepo)
 	blogService := service.NewBlogService(blogRepo)
 	feedService := service.NewFeedService(feedRepo)
 	friendService := service.NewFriendService(friendRepo)
+	groupService := service.NewGroupService(groupRepo)
+	messageService := service.NewMessageService(messageRepo)
+	notifService := service.NewNotificationService(notifRepo)
 
 	// 初始化处理器
 	userHandler := handler.NewUserHandler(userService)
 	blogHandler := handler.NewBlogHandler(blogService)
 	feedHandler := handler.NewFeedHandler(feedService)
 	friendHandler := handler.NewFriendHandler(friendService)
+	groupHandler := handler.NewGroupHandler(groupService)
+	messageHandler := handler.NewMessageHandler(messageService)
+	notifHandler := handler.NewNotificationHandler(notifService)
 
 	// 创建 Gin 引擎
 	r := gin.New()
@@ -109,6 +118,12 @@ func main() {
 		api.GET("/feeds/:id", feedHandler.Get)
 		api.GET("/users/:user_id/feeds", feedHandler.ListByUser)
 
+		// 群组路由（公开）
+		api.GET("/groups", groupHandler.List)
+		api.GET("/groups/:id", groupHandler.Get)
+		api.GET("/groups/:id/members", groupHandler.ListMembers)
+		api.GET("/groups/search", groupHandler.Search)
+
 		// 需要认证的路由
 		authorized := api.Group("/")
 		authorized.Use(middleware.AuthMiddleware())
@@ -134,6 +149,28 @@ func main() {
 			authorized.GET("/friends", friendHandler.ListFriends)
 			authorized.DELETE("/friends/:id", friendHandler.DeleteFriend)
 			authorized.PUT("/friends/:id/group", friendHandler.UpdateFriendGroup)
+
+			// 群组
+			authorized.POST("/groups", groupHandler.Create)
+			authorized.PUT("/groups/:id", groupHandler.Update)
+			authorized.DELETE("/groups/:id", groupHandler.Delete)
+			authorized.POST("/groups/:id/join", groupHandler.Join)
+			authorized.POST("/groups/:id/leave", groupHandler.Leave)
+			authorized.DELETE("/groups/:id/members/:user_id", groupHandler.KickMember)
+
+			// 消息
+			authorized.POST("/messages", messageHandler.Send)
+			authorized.GET("/messages/conversations", messageHandler.ListConversations)
+			authorized.GET("/messages/unread", messageHandler.UnreadCount)
+			authorized.GET("/messages/:user_id", messageHandler.ListMessages)
+			authorized.POST("/messages/:user_id/read", messageHandler.MarkAsRead)
+
+			// 通知
+			authorized.GET("/notifications", notifHandler.List)
+			authorized.GET("/notifications/unread", notifHandler.UnreadCount)
+			authorized.PUT("/notifications/:id/read", notifHandler.MarkAsRead)
+			authorized.PUT("/notifications/read-all", notifHandler.MarkAllAsRead)
+			authorized.DELETE("/notifications/:id", notifHandler.Delete)
 		}
 	}
 
