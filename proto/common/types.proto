@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package uchome.common;
 
+import "google/protobuf/timestamp.proto";
+
 
 option go_package = "github.com/kongken/go-home/pkg/proto/common;common";
 

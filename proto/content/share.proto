@@ -5,6 +5,7 @@ package uchome.content;
 option go_package = "github.com/kongken/go-home/pkg/proto/content;content";
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "common/types.proto";
 import "user/user.proto";
