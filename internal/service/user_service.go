@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"butterfly.orx.me/core/log"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/kongken/go-home/internal/cache"
 	"github.com/kongken/go-home/internal/config"
@@ -60,19 +61,25 @@ func NewUserService(userRepo repository.UserRepository, redisCache *cache.RedisC
 
 // Register 用户注册
 func (s *userService) Register(ctx context.Context, username, password, email string) (*model.User, error) {
+	logger := log.FromContext(ctx)
+	logger.Info("registering user", "username", username, "email", email)
+	
 	// 检查用户名是否已存在
 	if _, err := s.userRepo.GetByUsername(ctx, username); err == nil {
+		logger.Warn("username already exists", "username", username)
 		return nil, ErrUserExists
 	}
 
 	// 检查邮箱是否已存在
 	if _, err := s.userRepo.GetByEmail(ctx, email); err == nil {
+		logger.Warn("email already exists", "email", email)
 		return nil, ErrUserExists
 	}
 
 	// 加密密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
+		logger.Error("failed to hash password", "error", err)
 		return nil, err
 	}
 
@@ -84,27 +91,37 @@ func (s *userService) Register(ctx context.Context, username, password, email st
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
+		logger.Error("failed to create user", "error", err, "username", username)
 		return nil, err
 	}
+	
+	logger.Info("user registered successfully", "user_id", user.ID, "username", username)
 
 	return user, nil
 }
 
 // Login 用户登录
 func (s *userService) Login(ctx context.Context, account, password string) (*AuthResult, error) {
+	logger := log.FromContext(ctx)
+	logger.Info("user login attempt", "account", account)
+	
 	// 尝试通过用户名或邮箱查找用户
 	user, err := s.userRepo.GetByUsername(ctx, account)
 	if err != nil {
 		user, err = s.userRepo.GetByEmail(ctx, account)
 		if err != nil {
+			logger.Warn("user not found", "account", account)
 			return nil, ErrUserNotFound
 		}
 	}
 
 	// 验证密码
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		logger.Warn("invalid password", "user_id", user.ID, "account", account)
 		return nil, ErrInvalidPassword
 	}
+
+	logger.Info("user logged in successfully", "user_id", user.ID, "account", account)
 
 	// 生成 token
 	return s.generateTokens(user)

@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"butterfly.orx.me/core/log"
 	"github.com/gin-gonic/gin"
 	"github.com/kongken/go-home/internal/service"
 )
@@ -50,8 +51,11 @@ type UserInfo struct {
 
 // Register 用户注册
 func (h *UserHandler) Register(c *gin.Context) {
+	logger := log.FromContext(c.Request.Context())
+	
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warn("invalid register request", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -59,13 +63,16 @@ func (h *UserHandler) Register(c *gin.Context) {
 	user, err := h.userService.Register(c.Request.Context(), req.Username, req.Password, req.Email)
 	if err != nil {
 		if err == service.ErrUserExists {
+			logger.Warn("user already exists", "username", req.Username)
 			c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
 			return
 		}
+		logger.Error("failed to register user", "error", err, "username", req.Username)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	logger.Info("user registered", "user_id", user.ID, "username", user.Username)
 	c.JSON(http.StatusCreated, gin.H{
 		"user": &UserInfo{
 			ID:       user.ID,
@@ -79,8 +86,11 @@ func (h *UserHandler) Register(c *gin.Context) {
 
 // Login 用户登录
 func (h *UserHandler) Login(c *gin.Context) {
+	logger := log.FromContext(c.Request.Context())
+	
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warn("invalid login request", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -88,13 +98,16 @@ func (h *UserHandler) Login(c *gin.Context) {
 	result, err := h.userService.Login(c.Request.Context(), req.Account, req.Password)
 	if err != nil {
 		if err == service.ErrUserNotFound || err == service.ErrInvalidPassword {
+			logger.Warn("login failed - invalid credentials", "account", req.Account)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 			return
 		}
+		logger.Error("login failed", "error", err, "account", req.Account)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	logger.Info("user logged in", "user_id", result.User.ID, "account", req.Account)
 	c.JSON(http.StatusOK, AuthResponse{
 		AccessToken:  result.AccessToken,
 		RefreshToken: result.RefreshToken,
