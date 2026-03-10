@@ -3,8 +3,8 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# 安装依赖
-RUN apk add --no-cache git
+# 安装 git 和 ca-certificates
+RUN apk add --no-cache git ca-certificates
 
 # 复制 go mod 文件
 COPY go.mod go.sum ./
@@ -14,21 +14,21 @@ RUN go mod download
 COPY . .
 
 # 构建
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server ./cmd/server
 
 # 运行阶段
 FROM alpine:latest
 
+WORKDIR /app
+
+# 安装 ca-certificates
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
-
-# 复制二进制文件
+# 从构建阶段复制二进制文件
 COPY --from=builder /app/server .
-COPY --from=builder /app/config.yaml .
 
 # 暴露端口
-EXPOSE 8080
+EXPOSE 2222
 
 # 运行
 CMD ["./server"]

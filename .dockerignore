@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# 文档
+*.md
+docs/
+
+# 测试
+*_test.go
+/tests
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 构建产物
+/build
+/dist
+*.exe
+*.dll
+*.so
+
+# 依赖（会在容器中下载）
+vendor/
+
+# 环境文件
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 前端相关
+front/node_modules/
+front/dist/
+front/.cache/
