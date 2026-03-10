@@ -5,6 +5,9 @@ import { Login } from '@/pages/Login'
 import { Register } from '@/pages/Register'
 import { Home } from '@/pages/Home'
 import { BlogList } from '@/pages/Blog'
+import { BlogDetail } from '@/pages/BlogDetail'
+import { BlogEdit } from '@/pages/BlogEdit'
+import { Profile } from '@/pages/Profile'
 
 const queryClient = new QueryClient()
 
@@ -27,9 +30,11 @@ function AppRoutes() {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Home />} />
         <Route path="blogs" element={<BlogList />} />
-        <Route path="blogs/:id" element={<Placeholder title="博客详情" />} />
-        <Route path="blogs/new" element={<Placeholder title="写博客" />} />
-        <Route path="profile" element={<Placeholder title="个人主页" />} />
+        <Route path="blogs/:id" element={<BlogDetail />} />
+        <Route path="blogs/new" element={<BlogEdit />} />
+        <Route path="blogs/:id/edit" element={<BlogEdit />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="users/:id" element={<Profile />} />
         <Route path="friends" element={<Placeholder title="好友管理" />} />
         <Route path="groups" element={<Placeholder title="群组" />} />
         <Route path="messages" element={<Placeholder title="消息" />} />

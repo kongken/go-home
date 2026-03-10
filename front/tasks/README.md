@@ -12,8 +12,8 @@
 | 03 | [认证页面](./03-auth-pages.md) | 登录/注册页面 | ✅ 已完成 |
 | 04 | [布局组件](./04-layout-components.md) | Header, Sidebar, MainLayout | ✅ 已完成 |
 | 05 | [首页动态流](./05-home-feed.md) | Feed 流、发布框 | ✅ 已完成 |
-| 06 | [博客功能](./06-blog-pages.md) | 博客列表、详情、编辑 | ⏳ 待开始 |
-| 07 | [个人主页](./07-user-profile.md) | 用户 Profile 页面 | ⏳ 待开始 |
+| 06 | [博客功能](./06-blog-pages.md) | 博客列表、详情、编辑 | ✅ 已完成 |
+| 07 | [个人主页](./07-user-profile.md) | 用户 Profile 页面 | ✅ 已完成 |
 | 08 | [好友与群组](./08-friends-groups.md) | 好友管理、群组功能 | ⏳ 待开始 |
 | 09 | [消息系统](./09-messages.md) | 私信、通知 | ⏳ 待开始 |
 | 10 | [设置页面](./10-settings.md) | 用户设置 | ⏳ 待开始 |
