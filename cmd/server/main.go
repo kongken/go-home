@@ -6,12 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"butterfly.orx.me/core/app"
 
-	"github.com/kongken/go-home/internal/cache"
 	"github.com/kongken/go-home/internal/config"
 	"github.com/kongken/go-home/internal/handler"
 	"github.com/kongken/go-home/internal/middleware"
-	"github.com/kongken/go-home/internal/repository"
-	"github.com/kongken/go-home/internal/service"
 )
 
 func main() {
@@ -53,54 +50,33 @@ var (
 	settingsHandler *handler.SettingsHandler
 )
 
-// initServices 初始化所有服务
+// initServices 初始化所有服务 (使用 Wire)
 func initServices() error {
-	log.Println("initializing services...")
+	log.Println("initializing services with Wire...")
 	
 	// 设置全局配置
 	cfg := &config.ButterflyConfig{}
 	config.SetGlobalConfig(cfg)
 	
-	// 初始化 Repository 层 - 使用 butterfly store
-	userRepo := repository.NewUserRepositoryButterfly()
-	blogRepo := repository.NewBlogRepositoryButterfly()
-	feedRepo := repository.NewFeedRepositoryButterfly()
-	friendRepo := repository.NewFriendRepositoryButterfly()
-	groupRepo := repository.NewGroupRepositoryButterfly()
-	messageRepo := repository.NewMessageRepositoryButterfly()
-	notifRepo := repository.NewNotificationRepositoryButterfly()
-	commentRepo := repository.NewCommentRepositoryButterfly()
-	albumRepo := repository.NewAlbumRepositoryButterfly()
-	settingsRepo := repository.NewSettingsRepositoryButterfly()
+	// 使用 Wire 初始化所有 Handler
+	handlers, err := InitializeHandlers()
+	if err != nil {
+		return err
+	}
 	
-	// 初始化 Redis Cache
-	redisCache := cache.NewRedisCache()
+	// 赋值给全局变量
+	userHandler = handlers.UserHandler
+	blogHandler = handlers.BlogHandler
+	feedHandler = handlers.FeedHandler
+	friendHandler = handlers.FriendHandler
+	groupHandler = handlers.GroupHandler
+	messageHandler = handlers.MessageHandler
+	notifHandler = handlers.NotifHandler
+	commentHandler = handlers.CommentHandler
+	albumHandler = handlers.AlbumHandler
+	settingsHandler = handlers.SettingsHandler
 	
-	// 初始化 Service 层 (传入 cache)
-	userService := service.NewUserService(userRepo, redisCache)
-	blogService := service.NewBlogService(blogRepo, redisCache)
-	feedService := service.NewFeedService(feedRepo, redisCache)
-	friendService := service.NewFriendService(friendRepo)
-	groupService := service.NewGroupService(groupRepo)
-	messageService := service.NewMessageService(messageRepo)
-	notifService := service.NewNotificationService(notifRepo)
-	commentService := service.NewCommentService(commentRepo)
-	albumService := service.NewAlbumService(albumRepo)
-	settingsService := service.NewSettingsService(settingsRepo)
-	
-	// 初始化 Handler 层
-	userHandler = handler.NewUserHandler(userService)
-	blogHandler = handler.NewBlogHandler(blogService)
-	feedHandler = handler.NewFeedHandler(feedService)
-	friendHandler = handler.NewFriendHandler(friendService)
-	groupHandler = handler.NewGroupHandler(groupService)
-	messageHandler = handler.NewMessageHandler(messageService)
-	notifHandler = handler.NewNotificationHandler(notifService)
-	commentHandler = handler.NewCommentHandler(commentService)
-	albumHandler = handler.NewAlbumHandler(albumService)
-	settingsHandler = handler.NewSettingsHandler(settingsService)
-	
-	log.Println("services initialized successfully")
+	log.Println("services initialized successfully with Wire")
 	return nil
 }
 
