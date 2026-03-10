@@ -1,27 +1,54 @@
-server:
-  host: 0.0.0.0
-  port: 8080
-  mode: debug
+# Butterfly 框架配置
 
-database:
-  host: localhost
-  port: 5432
-  user: postgres
-  password: postgres
-  dbname: gohome
-  sslmode: disable
+# 服务名称
+service: go-home
 
-redis:
-  host: localhost
-  port: 6379
-  password: ""
-  db: 0
+# 存储配置
+store:
+  # MongoDB 配置
+  mongo:
+    primary:
+      uri: "mongodb://localhost:27017/gohome"
+    # 可选：读写分离配置
+    # secondary:
+    #   uri: "mongodb://localhost:27018/gohome"
 
+  # Redis 配置
+  redis:
+    cache:
+      addr: "localhost:6379"
+      password: ""
+      db: 0
+    session:
+      addr: "localhost:6379"
+      password: ""
+      db: 1
+
+  # 关系型数据库配置 (可选)
+  # db:
+  #   main:
+  #     host: "localhost"
+  #     port: 3306
+  #     user: "root"
+  #     password: "password"
+  #     db_name: "gohome"
+
+# OpenTelemetry 配置
+otel:
+  # 链路追踪配置
+  tracing:
+    enabled: true
+    endpoint: "localhost:4318"
+    provider: "http"  # http 或 grpc
+
+# JWT 配置
 jwt:
-  secret: your-secret-key-change-this-in-production
+  secret: "your-secret-key-change-this-in-production"
   access_expiry: 3600
   refresh_expiry: 604800
 
-log:
-  level: info
-  format: json
+# 服务器配置
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "debug"
