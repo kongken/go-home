@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/kongken/go-home/internal/cache"
 	"github.com/kongken/go-home/internal/config"
 	"github.com/kongken/go-home/internal/model"
 	"github.com/kongken/go-home/internal/repository"
@@ -39,16 +40,18 @@ type AuthResult struct {
 // userService 用户服务实现
 type userService struct {
 	userRepo repository.UserRepository
+	userCache *cache.UserCache
 	jwtSecret []byte
 	accessExpiry time.Duration
 	refreshExpiry time.Duration
 }
 
 // NewUserService 创建用户服务
-func NewUserService(userRepo repository.UserRepository) UserService {
+func NewUserService(userRepo repository.UserRepository, redisCache *cache.RedisCache) UserService {
 	cfg := config.Get().JWT
 	return &userService{
 		userRepo:      userRepo,
+		userCache:     redisCache.UserCache(),
 		jwtSecret:     []byte(cfg.Secret),
 		accessExpiry:  time.Duration(cfg.AccessExpiry) * time.Second,
 		refreshExpiry: time.Duration(cfg.RefreshExpiry) * time.Second,
@@ -107,12 +110,30 @@ func (s *userService) Login(ctx context.Context, account, password string) (*Aut
 	return s.generateTokens(user)
 }
 
-// GetUser 获取用户信息
+// GetUser 获取用户信息 (带缓存)
 func (s *userService) GetUser(ctx context.Context, id string) (*model.User, error) {
-	return s.userRepo.GetByID(ctx, id)
+	// 先查缓存
+	if s.userCache != nil {
+		if user, err := s.userCache.Get(ctx, id); err == nil && user != nil {
+			return user, nil
+		}
+	}
+	
+	// 查数据库
+	user, err := s.userRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	
+	// 写入缓存
+	if s.userCache != nil {
+		s.userCache.Set(ctx, user, time.Hour)
+	}
+	
+	return user, nil
 }
 
-// UpdateUser 更新用户信息
+// UpdateUser 更新用户信息 (更新后删除缓存)
 func (s *userService) UpdateUser(ctx context.Context, id string, updates map[string]interface{}) (*model.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
@@ -132,6 +153,11 @@ func (s *userService) UpdateUser(ctx context.Context, id string, updates map[str
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		return nil, err
+	}
+	
+	// 删除缓存
+	if s.userCache != nil {
+		s.userCache.Delete(ctx, id)
 	}
 
 	return user, nil

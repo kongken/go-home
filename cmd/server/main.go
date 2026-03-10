@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"butterfly.orx.me/core/app"
 
+	"github.com/kongken/go-home/internal/cache"
 	"github.com/kongken/go-home/internal/config"
 	"github.com/kongken/go-home/internal/handler"
 	"github.com/kongken/go-home/internal/middleware"
@@ -72,10 +73,13 @@ func initServices() error {
 	albumRepo := repository.NewAlbumRepositoryButterfly()
 	settingsRepo := repository.NewSettingsRepositoryButterfly()
 	
-	// 初始化 Service 层
-	userService := service.NewUserService(userRepo)
-	blogService := service.NewBlogService(blogRepo)
-	feedService := service.NewFeedService(feedRepo)
+	// 初始化 Redis Cache
+	redisCache := cache.NewRedisCache()
+	
+	// 初始化 Service 层 (传入 cache)
+	userService := service.NewUserService(userRepo, redisCache)
+	blogService := service.NewBlogService(blogRepo, redisCache)
+	feedService := service.NewFeedService(feedRepo, redisCache)
 	friendService := service.NewFriendService(friendRepo)
 	groupService := service.NewGroupService(groupRepo)
 	messageService := service.NewMessageService(messageRepo)

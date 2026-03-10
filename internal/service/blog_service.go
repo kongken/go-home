@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/kongken/go-home/internal/cache"
 	"github.com/kongken/go-home/internal/model"
 	"github.com/kongken/go-home/internal/repository"
 )
@@ -26,12 +27,16 @@ type BlogService interface {
 
 // blogService 博客服务实现
 type blogService struct {
-	blogRepo repository.BlogRepository
+	blogRepo  repository.BlogRepository
+	blogCache *cache.BlogCache
 }
 
 // NewBlogService 创建博客服务
-func NewBlogService(blogRepo repository.BlogRepository) BlogService {
-	return &blogService{blogRepo: blogRepo}
+func NewBlogService(blogRepo repository.BlogRepository, redisCache *cache.RedisCache) BlogService {
+	return &blogService{
+		blogRepo:  blogRepo,
+		blogCache: redisCache.BlogCache(),
+	}
 }
 
 // Create 创建博客
@@ -57,9 +62,27 @@ func (s *blogService) Create(ctx context.Context, userID string, title, content,
 	return blog, nil
 }
 
-// Get 获取博客
+// Get 获取博客 (带缓存)
 func (s *blogService) Get(ctx context.Context, id string) (*model.Blog, error) {
-	return s.blogRepo.GetByID(ctx, id)
+	// 先查缓存
+	if s.blogCache != nil {
+		if blog, err := s.blogCache.Get(ctx, id); err == nil && blog != nil {
+			return blog, nil
+		}
+	}
+	
+	// 查数据库
+	blog, err := s.blogRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, ErrBlogNotFound
+	}
+	
+	// 写入缓存
+	if s.blogCache != nil {
+		s.blogCache.Set(ctx, blog, 0) // 使用默认TTL
+	}
+	
+	return blog, nil
 }
 
 // Update 更新博客
@@ -120,7 +143,16 @@ func (s *blogService) Delete(ctx context.Context, id, userID string) error {
 		return ErrUnauthorized
 	}
 
-	return s.blogRepo.Delete(ctx, id)
+	if err := s.blogRepo.Delete(ctx, id); err != nil {
+		return err
+	}
+	
+	// 删除缓存
+	if s.blogCache != nil {
+		s.blogCache.Delete(ctx, id)
+	}
+	
+	return nil
 }
 
 // List 获取博客列表
