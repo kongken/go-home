@@ -171,3 +171,20 @@ otel:
 
 ## 预计完成
 待定
+
+## 完成进度
+
+### Phase 1: 基础架构迁移 ✅
+- [x] 添加 butterfly 依赖 (v1.6.3)
+- [x] 创建 butterfly 配置文件 (config.yaml)
+- [x] 重构 main.go 使用 butterfly app
+- [x] 配置 MongoDB/Redis 连接
+- [x] 创建所有 butterfly repositories (10个)
+- [x] 构建成功 (38MB)
+
+### Phase 2-6 待完成
+- [ ] Phase 2: 存储层迁移 (Redis cache 集成)
+- [ ] Phase 3: 服务层迁移 (日志/追踪)
+- [ ] Phase 4: 依赖注入重构 (Wire)
+- [ ] Phase 5: 传输层增强 (gRPC/Twirp)
+- [ ] Phase 6: 可观测性完善
