@@ -64,7 +64,7 @@ func NewUserService(userRepo repository.UserRepository, redisCache *cache.RedisC
 // Register 用户注册
 func (s *userService) Register(ctx context.Context, username, password, email string) (*model.User, error) {
 	// 开始追踪
-	ctx, span := trace.TraceUserRegister(ctx, "", username)
+	ctx, span := trace.UserRegister(ctx, "", username)
 	defer span.End()
 	
 	logger := log.FromContext(ctx)
@@ -107,12 +107,12 @@ func (s *userService) Register(ctx context.Context, username, password, email st
 	
 	// 设置追踪属性
 	trace.SetAttributes(span, 
-		trace.StringAttribute("user.id", user.ID),
-		trace.StringAttribute("user.email", user.Email),
+		trace.Str("user.id", user.ID),
+		trace.Str("user.email", user.Email),
 	)
 	
 	// 记录指标
-	metrics.IncUserRegistered()
+	metrics.UserRegistered()
 	
 	logger.Info("user registered successfully", "user_id", user.ID, "username", username)
 	return user, nil

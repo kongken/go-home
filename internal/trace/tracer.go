@@ -45,73 +45,73 @@ func SetAttributes(span trace.Span, attrs ...attribute.KeyValue) {
 	span.SetAttributes(attrs...)
 }
 
-// StringAttribute 创建字符串属性
-func StringAttribute(key, value string) attribute.KeyValue {
+// Str 创建字符串属性
+func Str(key, value string) attribute.KeyValue {
 	return attribute.String(key, value)
 }
 
-// IntAttribute 创建整数属性
-func IntAttribute(key string, value int) attribute.KeyValue {
+// Int 创建整数属性
+func Int(key string, value int) attribute.KeyValue {
 	return attribute.Int(key, value)
 }
 
-// Int64Attribute 创建 int64 属性
-func Int64Attribute(key string, value int64) attribute.KeyValue {
+// Int64 创建 int64 属性
+func Int64(key string, value int64) attribute.KeyValue {
 	return attribute.Int64(key, value)
 }
 
-// BoolAttribute 创建布尔属性
-func BoolAttribute(key string, value bool) attribute.KeyValue {
+// Bool 创建布尔属性
+func Bool(key string, value bool) attribute.KeyValue {
 	return attribute.Bool(key, value)
 }
 
-// Float64Attribute 创建 float64 属性
-func Float64Attribute(key string, value float64) attribute.KeyValue {
+// Float64 创建 float64 属性
+func Float64(key string, value float64) attribute.KeyValue {
 	return attribute.Float64(key, value)
 }
 
-// TraceUserRegister 追踪用户注册
-func TraceUserRegister(ctx context.Context, userID, username string) (context.Context, trace.Span) {
+// UserRegister 追踪用户注册
+func UserRegister(ctx context.Context, userID, username string) (context.Context, trace.Span) {
 	return StartSpanWithAttributes(ctx, "User.Register",
-		StringAttribute("user.id", userID),
-		StringAttribute("user.username", username),
+		Str("user.id", userID),
+		Str("user.username", username),
 	)
 }
 
-// TraceUserLogin 追踪用户登录
-func TraceUserLogin(ctx context.Context, account string) (context.Context, trace.Span) {
+// UserLogin 追踪用户登录
+func UserLogin(ctx context.Context, account string) (context.Context, trace.Span) {
 	return StartSpanWithAttributes(ctx, "User.Login",
-		StringAttribute("user.account", account),
+		Str("user.account", account),
 	)
 }
 
-// TraceBlogCreate 追踪博客创建
-func TraceBlogCreate(ctx context.Context, userID, blogID string) (context.Context, trace.Span) {
+// BlogCreate 追踪博客创建
+func BlogCreate(ctx context.Context, userID, blogID string) (context.Context, trace.Span) {
 	return StartSpanWithAttributes(ctx, "Blog.Create",
-		StringAttribute("user.id", userID),
-		StringAttribute("blog.id", blogID),
+		Str("user.id", userID),
+		Str("blog.id", blogID),
 	)
 }
 
-// TraceFeedCreate 追踪动态创建
-func TraceFeedCreate(ctx context.Context, userID string, feedType int32) (context.Context, trace.Span) {
+// FeedCreate 追踪动态创建
+func FeedCreate(ctx context.Context, userID string, feedType int32) (context.Context, trace.Span) {
 	return StartSpanWithAttributes(ctx, "Feed.Create",
-		StringAttribute("user.id", userID),
-		Int64Attribute("feed.type", int64(feedType)),
+		Str("user.id", userID),
+		Int64("feed.type", int64(feedType)),
 	)
 }
 
-// TraceCacheOperation 追踪缓存操作
-func TraceCacheOperation(ctx context.Context, operation, cacheType, key string) (context.Context, trace.Span) {
+// CacheOp 追踪缓存操作
+func CacheOp(ctx context.Context, operation, cacheType, key string) (context.Context, trace.Span) {
 	return StartSpanWithAttributes(ctx, fmt.Sprintf("Cache.%s", operation),
-		StringAttribute("cache.type", cacheType),
-		StringAttribute("cache.key", key),
+		Str("cache.type", cacheType),
+		Str("cache.key", key),
 	)
 }
 
-// TraceDBOperation 追踪数据库操作
-func TraceDBOperation(ctx context.Context, operation, table string) (context.Context, trace.Span) {
+// DBOp 追踪数据库操作
+func DBOp(ctx context.Context, operation, table string) (context.Context, trace.Span) {
 	return StartSpanWithAttributes(ctx, fmt.Sprintf("DB.%s", operation),
-		StringAttribute("db.table", table),
+		Str("db.table", table),
 	)
 }

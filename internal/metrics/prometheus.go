@@ -76,37 +76,37 @@ var (
 	)
 )
 
-// RecordCacheHit 记录缓存命中
-func RecordCacheHit(cacheType string) {
+// CacheHit 记录缓存命中
+func CacheHit(cacheType string) {
 	CacheHitTotal.WithLabelValues(cacheType).Inc()
 }
 
-// RecordCacheMiss 记录缓存未命中
-func RecordCacheMiss(cacheType string) {
+// CacheMiss 记录缓存未命中
+func CacheMiss(cacheType string) {
 	CacheMissTotal.WithLabelValues(cacheType).Inc()
 }
 
-// IncActiveConnections 增加活跃连接
-func IncActiveConnections() {
+// ActiveConnInc 增加活跃连接
+func ActiveConnInc() {
 	ActiveConnections.Inc()
 }
 
-// DecActiveConnections 减少活跃连接
-func DecActiveConnections() {
+// ActiveConnDec 减少活跃连接
+func ActiveConnDec() {
 	ActiveConnections.Dec()
 }
 
-// IncUserRegistered 增加注册用户
-func IncUserRegistered() {
+// UserRegistered 增加注册用户
+func UserRegistered() {
 	UserRegisteredTotal.Inc()
 }
 
-// IncBlogCreated 增加博客创建
-func IncBlogCreated() {
+// BlogCreated 增加博客创建
+func BlogCreated() {
 	BlogCreatedTotal.Inc()
 }
 
-// IncFeedCreated 增加动态创建
-func IncFeedCreated() {
+// FeedCreated 增加动态创建
+func FeedCreated() {
 	FeedCreatedTotal.Inc()
 }

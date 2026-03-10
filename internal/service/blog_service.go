@@ -4,10 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
+	"butterfly.orx.me/core/log"
 	"github.com/kongken/go-home/internal/cache"
+	"github.com/kongken/go-home/internal/metrics"
 	"github.com/kongken/go-home/internal/model"
 	"github.com/kongken/go-home/internal/repository"
+	"github.com/kongken/go-home/internal/trace"
 )
 
 var (
@@ -41,7 +45,18 @@ func NewBlogService(blogRepo repository.BlogRepository, redisCache *cache.RedisC
 
 // Create 创建博客
 func (s *blogService) Create(ctx context.Context, userID string, title, content, summary, coverImage string, tags []string, category string, privacy model.PrivacyLevel, status model.BlogStatus) (*model.Blog, error) {
-	tagsJSON, _ := json.Marshal(tags)
+	ctx, span := trace.BlogCreate(ctx, userID, "")
+	defer span.End()
+	
+	logger := log.FromContext(ctx)
+	logger.Info("creating blog", "user_id", userID, "title", title)
+	
+	tagsJSON, err := json.Marshal(tags)
+	if err != nil {
+		logger.Error("failed to marshal tags", "error", err)
+		trace.RecordError(span, err)
+		return nil, err
+	}
 
 	blog := &model.Blog{
 		UserID:     userID,
@@ -56,44 +71,65 @@ func (s *blogService) Create(ctx context.Context, userID string, title, content,
 	}
 
 	if err := s.blogRepo.Create(ctx, blog); err != nil {
+		logger.Error("failed to create blog", "error", err, "user_id", userID)
+		trace.RecordError(span, err)
 		return nil, err
 	}
-
+	
+	trace.SetAttributes(span, trace.Str("blog.id", blog.ID))
+	metrics.BlogCreated()
+	
+	logger.Info("blog created", "blog_id", blog.ID, "user_id", userID)
 	return blog, nil
 }
 
 // Get 获取博客 (带缓存)
 func (s *blogService) Get(ctx context.Context, id string) (*model.Blog, error) {
+	logger := log.FromContext(ctx)
+	
 	// 先查缓存
 	if s.blogCache != nil {
 		if blog, err := s.blogCache.Get(ctx, id); err == nil && blog != nil {
+			metrics.CacheHit("blog")
+			logger.Debug("blog cache hit", "blog_id", id)
 			return blog, nil
 		}
+		metrics.CacheMiss("blog")
+		logger.Debug("blog cache miss", "blog_id", id)
 	}
 	
 	// 查数据库
 	blog, err := s.blogRepo.GetByID(ctx, id)
 	if err != nil {
+		logger.Warn("blog not found", "blog_id", id)
 		return nil, ErrBlogNotFound
 	}
 	
 	// 写入缓存
 	if s.blogCache != nil {
-		s.blogCache.Set(ctx, blog, 0) // 使用默认TTL
+		if err := s.blogCache.Set(ctx, blog, time.Hour); err != nil {
+			logger.Warn("failed to set blog cache", "blog_id", id, "error", err)
+		}
 	}
 	
+	logger.Debug("blog fetched", "blog_id", id)
 	return blog, nil
 }
 
 // Update 更新博客
 func (s *blogService) Update(ctx context.Context, id, userID string, updates map[string]interface{}) (*model.Blog, error) {
+	logger := log.FromContext(ctx)
+	logger.Info("updating blog", "blog_id", id, "user_id", userID)
+	
 	blog, err := s.blogRepo.GetByID(ctx, id)
 	if err != nil {
+		logger.Warn("blog not found for update", "blog_id", id)
 		return nil, ErrBlogNotFound
 	}
 
 	// 检查权限
 	if blog.UserID != userID {
+		logger.Warn("unauthorized blog update attempt", "blog_id", id, "user_id", userID, "owner_id", blog.UserID)
 		return nil, ErrUnauthorized
 	}
 
@@ -114,7 +150,11 @@ func (s *blogService) Update(ctx context.Context, id, userID string, updates map
 		blog.Category = category
 	}
 	if tags, ok := updates["tags"].([]string); ok {
-		tagsJSON, _ := json.Marshal(tags)
+		tagsJSON, err := json.Marshal(tags)
+		if err != nil {
+			logger.Error("failed to marshal tags", "error", err)
+			return nil, err
+		}
 		blog.Tags = string(tagsJSON)
 	}
 	if privacy, ok := updates["privacy"].(model.PrivacyLevel); ok {
@@ -125,25 +165,38 @@ func (s *blogService) Update(ctx context.Context, id, userID string, updates map
 	}
 
 	if err := s.blogRepo.Update(ctx, blog); err != nil {
+		logger.Error("failed to update blog", "blog_id", id, "error", err)
 		return nil, err
 	}
-
+	
+	// 删除缓存
+	if s.blogCache != nil {
+		s.blogCache.Delete(ctx, id)
+	}
+	
+	logger.Info("blog updated", "blog_id", id)
 	return blog, nil
 }
 
 // Delete 删除博客
 func (s *blogService) Delete(ctx context.Context, id, userID string) error {
+	logger := log.FromContext(ctx)
+	logger.Info("deleting blog", "blog_id", id, "user_id", userID)
+	
 	blog, err := s.blogRepo.GetByID(ctx, id)
 	if err != nil {
+		logger.Warn("blog not found for delete", "blog_id", id)
 		return ErrBlogNotFound
 	}
 
 	// 检查权限
 	if blog.UserID != userID {
+		logger.Warn("unauthorized blog delete attempt", "blog_id", id, "user_id", userID, "owner_id", blog.UserID)
 		return ErrUnauthorized
 	}
 
 	if err := s.blogRepo.Delete(ctx, id); err != nil {
+		logger.Error("failed to delete blog", "blog_id", id, "error", err)
 		return err
 	}
 	
@@ -152,6 +205,7 @@ func (s *blogService) Delete(ctx context.Context, id, userID string) error {
 		s.blogCache.Delete(ctx, id)
 	}
 	
+	logger.Info("blog deleted", "blog_id", id)
 	return nil
 }
 
