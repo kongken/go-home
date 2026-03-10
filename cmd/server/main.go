@@ -5,9 +5,11 @@ import (
 	
 	"github.com/gin-gonic/gin"
 	"butterfly.orx.me/core/app"
+	"google.golang.org/grpc"
 
 	"github.com/kongken/go-home/internal/config"
 	"github.com/kongken/go-home/internal/handler"
+	grpclogic "github.com/kongken/go-home/internal/grpc"
 	"github.com/kongken/go-home/internal/middleware"
 )
 
@@ -19,6 +21,9 @@ func main() {
 		
 		// HTTP 路由注册
 		Router: setupRoutes,
+		
+		// gRPC 服务注册
+		GRPCRegister: setupGRPCServer,
 		
 		// 初始化函数链
 		InitFunc: []func() error{
@@ -202,4 +207,14 @@ func setupRoutes(r *gin.Engine) {
 			authorized.DELETE("/settings/blacklist/:user_id", settingsHandler.RemoveFromBlacklist)
 		}
 	}
+}
+
+// setupGRPCServer 设置 gRPC 服务
+func setupGRPCServer(s *grpc.Server) {
+	// 注册用户 gRPC 服务
+	grpclogic.RegisterUserService(s, userHandler)
+	
+	// 可以在这里注册更多 gRPC 服务
+	// grpclogic.RegisterBlogService(s, blogHandler)
+	// grpclogic.RegisterFeedService(s, feedHandler)
 }
