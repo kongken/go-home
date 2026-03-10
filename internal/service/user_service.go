@@ -9,8 +9,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/kongken/go-home/internal/cache"
 	"github.com/kongken/go-home/internal/config"
+	"github.com/kongken/go-home/internal/metrics"
 	"github.com/kongken/go-home/internal/model"
 	"github.com/kongken/go-home/internal/repository"
+	"github.com/kongken/go-home/internal/trace"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -61,18 +63,24 @@ func NewUserService(userRepo repository.UserRepository, redisCache *cache.RedisC
 
 // Register 用户注册
 func (s *userService) Register(ctx context.Context, username, password, email string) (*model.User, error) {
+	// 开始追踪
+	ctx, span := trace.TraceUserRegister(ctx, "", username)
+	defer span.End()
+	
 	logger := log.FromContext(ctx)
 	logger.Info("registering user", "username", username, "email", email)
 	
 	// 检查用户名是否已存在
 	if _, err := s.userRepo.GetByUsername(ctx, username); err == nil {
 		logger.Warn("username already exists", "username", username)
+		trace.RecordError(span, ErrUserExists)
 		return nil, ErrUserExists
 	}
 
 	// 检查邮箱是否已存在
 	if _, err := s.userRepo.GetByEmail(ctx, email); err == nil {
 		logger.Warn("email already exists", "email", email)
+		trace.RecordError(span, ErrUserExists)
 		return nil, ErrUserExists
 	}
 
@@ -80,6 +88,7 @@ func (s *userService) Register(ctx context.Context, username, password, email st
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		logger.Error("failed to hash password", "error", err)
+		trace.RecordError(span, err)
 		return nil, err
 	}
 
@@ -92,11 +101,20 @@ func (s *userService) Register(ctx context.Context, username, password, email st
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		logger.Error("failed to create user", "error", err, "username", username)
+		trace.RecordError(span, err)
 		return nil, err
 	}
 	
+	// 设置追踪属性
+	trace.SetAttributes(span, 
+		trace.StringAttribute("user.id", user.ID),
+		trace.StringAttribute("user.email", user.Email),
+	)
+	
+	// 记录指标
+	metrics.IncUserRegistered()
+	
 	logger.Info("user registered successfully", "user_id", user.ID, "username", username)
-
 	return user, nil
 }
 
