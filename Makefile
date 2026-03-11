@@ -7,7 +7,7 @@ BUILD_DIR=build
 
 # 构建
 build:
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_FILE)
+	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/server
 
 # 运行
 run:
