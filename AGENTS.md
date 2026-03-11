@@ -2,6 +2,12 @@
 
 This file provides guidance to agents when working with code in this repository.
 
+
+## Git
+
+当前仓库 github repo: https://github.com/kongken/go-home
+你可以调用 mcp 查看 ci 构建情况
+
 ## Project Structure
 
 - **Root**: Go backend (Gin + Butterfly framework + MongoDB + Redis)
