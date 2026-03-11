@@ -16,6 +16,10 @@
 - [x] 群组服务 (Group) - CRUD/成员管理/加入/离开
 - [x] 消息服务 (Message) - 发送/会话/已读状态
 - [x] 通知服务 (Notification) - 列表/已读/未读数
+- [x] 相册服务 (Album) - 创建/删除/列表/照片管理
+- [x] 评论服务 (Comment) - 创建/删除/列表
+- [x] 设置服务 (Settings) - 隐私设置/通知设置/黑名单
+- [x] 搜索服务 (Search) - 全局搜索/用户搜索/博客搜索/群组搜索 (基础实现)
 - [x] 中间件 (Auth/CORS/Logger)
 - [x] MongoDB 存储
 - [x] Redis 缓存
@@ -23,15 +27,14 @@
 - [x] 项目成功构建
 
 ### 进行中 🔄
-- [ ] Content 服务 (Activity/Album/Comment/Poll/Share)
-- [ ] Search 服务
-- [ ] Settings 服务
+- [ ] Content 服务 (Activity/Poll/Share) - 待实现
+- [ ] 搜索服务优化 - MongoDB 文本搜索集成
 
 ### 存储
 - 数据库: MongoDB
 - 缓存: Redis
 
-## 已实现的 API 端点 (45+)
+## 已实现的 API 端点 (58)
 
 ### 认证 (3)
 - POST /api/v1/auth/register
@@ -92,3 +95,23 @@
 - PUT /api/v1/notifications/:id/read
 - PUT /api/v1/notifications/read-all
 - DELETE /api/v1/notifications/:id
+
+### 相册 (6)
+- GET /api/v1/users/:user_id/albums
+- GET /api/v1/albums/:id
+- GET /api/v1/albums/:id/photos
+- POST /api/v1/albums
+- DELETE /api/v1/albums/:id
+- POST /api/v1/albums/:id/photos
+
+### 评论 (3)
+- GET /api/v1/comments
+- POST /api/v1/comments
+- DELETE /api/v1/comments/:id
+
+### 设置 (5)
+- GET /api/v1/settings
+- PUT /api/v1/settings/privacy
+- PUT /api/v1/settings/notification
+- POST /api/v1/settings/blacklist
+- DELETE /api/v1/settings/blacklist/:user_id
